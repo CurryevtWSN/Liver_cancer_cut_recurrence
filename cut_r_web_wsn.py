@@ -54,7 +54,7 @@ HBV_DNA_10000 =map[HBV_DNA_10000]
 # LOE =map[LOE]
 # gender = map[gender]
 # 数据读取，特征标注
-hp_train = pd.read_csv('E:\\Spyder_2022.3.29\\output\\machinel\\lrq_output\\liver_cut_r\\liver_cut_data_recurrence.csv')
+hp_train = pd.read_csv('liver_cut_data_recurrence.csv')
 hp_train['Recurrence'] = hp_train['Recurrence'].apply(lambda x : +1 if x==1 else 0)
 features =["Gender","Tumor_size_3","Tumor_single","BCLC","HBV_DNA_10000",'N',"M",'NLR','Post_ALB']
 target = 'Recurrence'
