@@ -5,7 +5,9 @@ import sklearn
 import matplotlib.pyplot as plt
 # from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
-
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestRegressor
+# X_data= new_data[['Gender','Tumor_size_3','Tumor_single','BCLC','HBV_DNA_10000','N','M','NLR','Fibrinogen']]
 #应用标题
 st.set_page_config(page_title='Prediction model for recurrence of hepatocellular carcinoma after hepatectomy')
 st.title('Prediction model for recurrence of hepatocellular carcinoma after hepatectomy：Machine Learning-Based development and interpretation study')
@@ -29,7 +31,7 @@ HBV_DNA_10000 = st.sidebar.selectbox('HBV_DNA',('≤10000','>10000'),index=1)
 N = st.sidebar.slider("Neutral granulocyte", 0.00, 10.00, value=4.50, step=0.01)
 M = st.sidebar.slider("Macrophages", 0.00, 1.00, value=0.50, step=0.01)
 NLR = st.sidebar.slider("Ratio of neutrophils to lymphocytes", 0.00, 5.00, value=2.50, step=0.01)
-Post_ALB = st.sidebar.slider("Postoperative albumin", 10.0, 50.0, value=35.0, step=0.1)
+Fibrinogen = st.sidebar.slider("Fibrinogen", 0.00, 10.0, value=5.00, step=0.01)
 # BMI = st.sidebar.slider("BMI", 15.0, 40.0, value=20.0, step=0.1)
 # waistline = st.sidebar.slider("waistline(cm)", 50.0, 150.0, value=100.0, step=1.0)
 # NC = st.sidebar.slider("NC(cm)", 20.0, 60.0, value=30.0, step=0.1)
@@ -54,12 +56,32 @@ HBV_DNA_10000 =map[HBV_DNA_10000]
 # LOE =map[LOE]
 # gender = map[gender]
 # 数据读取，特征标注
-hp_train = pd.read_csv('liver_cut_data_recurrence.csv')
+hp_train = pd.read_csv('E:\\Spyder_2022.3.29\\data\\machinel\\lrq_data\\liver_cut_data_recurrence.csv')
 hp_train['Recurrence'] = hp_train['Recurrence'].apply(lambda x : +1 if x==1 else 0)
-features =["Gender","Tumor_size_3","Tumor_single","BCLC","HBV_DNA_10000",'N',"M",'NLR','Post_ALB']
+features =["Gender","Tumor_size_3","Tumor_single","BCLC","HBV_DNA_10000",'N',"M",'NLR','Fibrinogen']
 target = 'Recurrence'
 random_state_new = 50
-X_ros = np.array(hp_train[features])
+data = hp_train[features]
+for name in ['Fibrinogen']:
+    X = data.drop(columns=f"{name}")
+    Y = data.loc[:, f"{name}"]
+    X_0 = SimpleImputer(missing_values=np.nan, strategy="constant").fit_transform(X)
+    y_train = Y[Y.notnull()]
+    y_test = Y[Y.isnull()]
+    x_train = X_0[y_train.index, :]
+    x_test = X_0[y_test.index, :]
+
+    rfc = RandomForestRegressor(n_estimators=100)
+    rfc = rfc.fit(x_train, y_train)
+    y_predict = rfc.predict(x_test)
+
+    data.loc[Y.isnull(), f"{name}"] = y_predict
+    
+X_data = data
+# X_data.isnull().sum(axis=0)
+#转换自变量
+X_ros = np.array(X_data)
+# X_ros = np.array(hp_train[features])
 y_ros = np.array(hp_train[target])
 mlp = MLPClassifier(hidden_layer_sizes=(100,), activation='relu', solver='lbfgs',
                     alpha=0.0001,
@@ -73,8 +95,8 @@ mlp = MLPClassifier(hidden_layer_sizes=(100,), activation='relu', solver='lbfgs'
 mlp.fit(X_ros, y_ros)
 sp = 0.5
 #figure
-is_t = (mlp.predict_proba(np.array([[Gender,Tumor_size_3,Tumor_single,BCLC,HBV_DNA_10000,N,M,NLR,Post_ALB]]))[0][1])> sp
-prob = (mlp.predict_proba(np.array([[Gender,Tumor_size_3,Tumor_single,BCLC,HBV_DNA_10000,N,M,NLR,Post_ALB]]))[0][1])*1000//1/10
+is_t = (mlp.predict_proba(np.array([[Gender,Tumor_size_3,Tumor_single,BCLC,HBV_DNA_10000,N,M,NLR,Fibrinogen]]))[0][1])> sp
+prob = (mlp.predict_proba(np.array([[Gender,Tumor_size_3,Tumor_single,BCLC,HBV_DNA_10000,N,M,NLR,Fibrinogen]]))[0][1])*1000//1/10
 
 
 if is_t:
